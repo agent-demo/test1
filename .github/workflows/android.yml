@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Prepare verified ONNX model asset
-        working-directory: .
+        working-directory: ${{ github.workspace }}
         run: |
           python -m pip install -r ml/requirements-cpu.txt
           python ml/scripts/inspect_hf_model.py --out ml/artifacts
