@@ -2,6 +2,19 @@
 
 The first model target is `LishaV01/agriculture-crop-disease-detection`.
 
+The checked-in [model manifest](model_manifest.json) is the application-facing label contract. The upstream config currently contains 20 classes, including `Invalid`, and has separate near-duplicate rice labels. Do not infer a cleaner taxonomy without a reviewed mapping and a new model evaluation.
+
+## Reproducible workflow
+
+```bash
+python ml/scripts/inspect_hf_model.py
+python ml/scripts/export_onnx.py
+```
+
+The scripts require the packages in [requirements.txt](requirements.txt). The model binary is deliberately ignored by Git. Pin a Hugging Face commit revision for a release instead of using `main`.
+
+The current `shell.nix` provides Python 3.12 and CUDA libraries, but it does not itself declare PyTorch/Transformers. Install [requirements.txt](requirements.txt) into a Python 3.12 virtual environment inside that shell, or add equivalent pinned Nix packages for a fully hermetic build.
+
 Required work before bundling it:
 
 1. Download the model and inspect whether the Safetensors file is a full classifier or an adapter requiring a base model.

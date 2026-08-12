@@ -7,6 +7,9 @@ coverage/
 __pycache__/
 *.py[cod]
 .venv/
+.venv-*/
 *.db
 *.egg-info/
+ml/artifacts/*
+!ml/artifacts/.gitkeep
 .env

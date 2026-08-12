@@ -12,7 +12,7 @@ class LocalStore {
     final databasePath = path.join(await getDatabasesPath(), 'crop_saathi.db');
     final database = await openDatabase(
       databasePath,
-      version: 1,
+      version: 2,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE observations (
@@ -23,10 +23,26 @@ class LocalStore {
             predictions TEXT NOT NULL,
             abstained INTEGER NOT NULL,
             abstain_reason TEXT,
+            growth_stage TEXT,
+            symptoms TEXT NOT NULL DEFAULT '[]',
+            recent_spray INTEGER,
+            approximate_location TEXT,
             consent_for_training INTEGER NOT NULL,
             sync_status TEXT NOT NULL
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db
+              .execute('ALTER TABLE observations ADD COLUMN growth_stage TEXT');
+          await db.execute(
+              "ALTER TABLE observations ADD COLUMN symptoms TEXT NOT NULL DEFAULT '[]'");
+          await db.execute(
+              'ALTER TABLE observations ADD COLUMN recent_spray INTEGER');
+          await db.execute(
+              'ALTER TABLE observations ADD COLUMN approximate_location TEXT');
+        }
       },
     );
     return LocalStore._(database);
@@ -41,7 +57,8 @@ class LocalStore {
   }
 
   Future<List<Observation>> listObservations() async {
-    final rows = await _database.query('observations', orderBy: 'captured_at DESC');
+    final rows =
+        await _database.query('observations', orderBy: 'captured_at DESC');
     return rows.map(Observation.fromStorage).toList();
   }
 
@@ -56,7 +73,8 @@ class LocalStore {
   }
 
   Future<void> markSyncStatus(String id, SyncStatus status) async {
-    await _database.update('observations', {'sync_status': status.name}, where: 'id = ?', whereArgs: [id]);
+    await _database.update('observations', {'sync_status': status.name},
+        where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> close() => _database.close();

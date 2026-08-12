@@ -1,0 +1,41 @@
+{
+  "model_id": "LishaV01/agriculture-crop-disease-detection",
+  "revision": "main",
+  "architecture": "ViTForImageClassification",
+  "input": {
+    "width": 224,
+    "height": 224,
+    "channels": 3,
+    "layout": "NCHW",
+    "rescale_factor": 0.00392156862745098,
+    "mean": [0.5, 0.5, 0.5],
+    "std": [0.5, 0.5, 0.5]
+  },
+  "labels": [
+    {"id": 0, "crop": "corn", "label": "common_rust"},
+    {"id": 1, "crop": "corn", "label": "gray_leaf_spot"},
+    {"id": 2, "crop": "corn", "label": "healthy"},
+    {"id": 3, "crop": "unknown", "label": "invalid", "abstain": true},
+    {"id": 4, "crop": "potato", "label": "early_blight"},
+    {"id": 5, "crop": "potato", "label": "healthy"},
+    {"id": 6, "crop": "potato", "label": "late_blight"},
+    {"id": 7, "crop": "rice", "label": "brown_spot"},
+    {"id": 8, "crop": "rice", "label": "healthy"},
+    {"id": 9, "crop": "rice", "label": "leaf_blast"},
+    {"id": 10, "crop": "wheat", "label": "brown_rust"},
+    {"id": 11, "crop": "wheat", "label": "healthy"},
+    {"id": 12, "crop": "wheat", "label": "yellow_rust"},
+    {"id": 13, "crop": "rice", "label": "bacterial_blight"},
+    {"id": 14, "crop": "rice", "label": "blast"},
+    {"id": 15, "crop": "rice", "label": "brown_spot_disease"},
+    {"id": 16, "crop": "rice", "label": "false_smut"},
+    {"id": 17, "crop": "sugarcane", "label": "bacterial_blight"},
+    {"id": 18, "crop": "sugarcane", "label": "healthy"},
+    {"id": 19, "crop": "sugarcane", "label": "red_rot"}
+  ],
+  "safety": {
+    "field_validated": false,
+    "invalid_class_abstains": true,
+    "requires_calibration_before_actionable_advice": true
+  }
+}

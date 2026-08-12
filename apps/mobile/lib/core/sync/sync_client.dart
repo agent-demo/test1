@@ -6,7 +6,8 @@ import '../models/observation.dart';
 import '../storage/local_store.dart';
 
 class SyncClient {
-  SyncClient({required this.baseUrl, required this.store, http.Client? client}) : _client = client ?? http.Client();
+  SyncClient({required this.baseUrl, required this.store, http.Client? client})
+      : _client = client ?? http.Client();
 
   final String baseUrl;
   final LocalStore store;
@@ -27,9 +28,14 @@ class SyncClient {
             'crop': observation.crop,
             'captured_at': observation.capturedAt.toUtc().toIso8601String(),
             'model_version': observation.modelVersion,
-            'predictions': observation.predictions.map((item) => item.toJson()).toList(),
+            'predictions':
+                observation.predictions.map((item) => item.toJson()).toList(),
             'abstained': observation.abstained,
             'abstain_reason': observation.abstainReason,
+            'growth_stage': observation.growthStage,
+            'symptoms': observation.symptoms,
+            'recent_spray': observation.recentSpray,
+            'approximate_location': observation.approximateLocation,
             'consent_for_training': observation.consentForTraining,
           }),
         );
@@ -43,12 +49,14 @@ class SyncClient {
         failed++;
       }
     }
-    return SyncSummary(attempted: pending.length, synced: synced, failed: failed);
+    return SyncSummary(
+        attempted: pending.length, synced: synced, failed: failed);
   }
 }
 
 class SyncSummary {
-  const SyncSummary({required this.attempted, required this.synced, required this.failed});
+  const SyncSummary(
+      {required this.attempted, required this.synced, required this.failed});
 
   final int attempted;
   final int synced;
