@@ -4,16 +4,19 @@ version = "0.1.0"
 description = "Offline-first sync and advisory API for Crop Saathi"
 requires-python = ">=3.12"
 dependencies = [
-  "fastapi>=0.115,<1",
-  "uvicorn[standard]>=0.30,<1",
+  "fastapi>=0.115,<0.120",
+  "uvicorn[standard]>=0.30,<0.35",
   "pydantic>=2.8,<3",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8,<9",
-  "httpx>=0.27,<1",
+  "httpx>=0.27,<0.29",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

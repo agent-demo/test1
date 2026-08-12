@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const CropSaathiApp());
+import 'core/inference/mock_inference_service.dart';
+import 'core/models/observation.dart';
+import 'core/storage/local_store.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final store = await LocalStore.open();
+  runApp(CropSaathiApp(store: store));
 }
 
 class CropSaathiApp extends StatelessWidget {
-  const CropSaathiApp({super.key});
+  const CropSaathiApp({required this.store, super.key});
+
+  final LocalStore store;
 
   @override
   Widget build(BuildContext context) {
@@ -16,13 +24,15 @@ class CropSaathiApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: HomePage(store: store),
     );
   }
 }
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({required this.store, super.key});
+
+  final LocalStore store;
 
   @override
   Widget build(BuildContext context) {
@@ -58,13 +68,13 @@ class HomePage extends StatelessWidget {
             icon: Icons.camera_alt,
             title: 'Scan a crop',
             subtitle: 'Take clear photos and check symptoms',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanPage())),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ScanPage(store: store))),
           ),
           _ActionCard(
             icon: Icons.history,
             title: 'My crop history',
             subtitle: 'Saved diagnoses and follow-ups',
-            onTap: () => _showMessage(context, 'History storage is the next offline module.'),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => HistoryPage(store: store))),
           ),
           _ActionCard(
             icon: Icons.currency_rupee,
@@ -79,7 +89,9 @@ class HomePage extends StatelessWidget {
 }
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key});
+  const ScanPage({required this.store, super.key});
+
+  final LocalStore store;
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -138,14 +150,15 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   void _showResult(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ResultPage(crop: crop!)));
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => ResultPage(crop: crop!, store: widget.store)));
   }
 }
 
 class ResultPage extends StatelessWidget {
-  const ResultPage({required this.crop, super.key});
+  const ResultPage({required this.crop, required this.store, super.key});
 
   final String crop;
+  final LocalStore store;
 
   @override
   Widget build(BuildContext context) {
@@ -172,8 +185,60 @@ class ResultPage extends StatelessWidget {
           ListTile(leading: const Icon(Icons.grass), title: Text(crop), subtitle: const Text('Crop selected by farmer')),
           const ListTile(leading: Icon(Icons.info_outline), title: Text('Model result'), subtitle: Text('Mock inference: integration pending')),
           const ListTile(leading: Icon(Icons.cloud_off), title: Text('Saved offline'), subtitle: Text('This observation can sync when connectivity returns')),
-          FilledButton.icon(onPressed: () => _showMessage(context, 'Observation queued for verified review.'), icon: const Icon(Icons.upload), label: const Text('Send for review')),
+          FilledButton.icon(onPressed: () => _saveObservation(context), icon: const Icon(Icons.save), label: const Text('Save offline and send for review')),
         ],
+      ),
+    );
+  }
+
+  Future<void> _saveObservation(BuildContext context) async {
+    final result = await MockInferenceService().classify(crop: crop, imagePath: 'mock');
+    await store.saveObservation(
+      Observation(
+        id: 'local-${DateTime.now().microsecondsSinceEpoch}',
+        crop: crop.toLowerCase(),
+        capturedAt: DateTime.now(),
+        modelVersion: 'mock-0.1',
+        predictions: result.predictions,
+        abstained: result.abstained,
+        abstainReason: result.reason,
+        consentForTraining: true,
+      ),
+    );
+    if (context.mounted) {
+      _showMessage(context, 'Observation saved offline and queued for review.');
+    }
+  }
+}
+
+class HistoryPage extends StatelessWidget {
+  const HistoryPage({required this.store, super.key});
+
+  final LocalStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My crop history')),
+      body: FutureBuilder<List<Observation>>(
+        future: store.listObservations(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          final observations = snapshot.data!;
+          if (observations.isEmpty) return const Center(child: Text('No saved observations yet.'));
+          return ListView.builder(
+            itemCount: observations.length,
+            itemBuilder: (context, index) {
+              final observation = observations[index];
+              return ListTile(
+                leading: Icon(observation.abstained ? Icons.help_outline : Icons.grass),
+                title: Text(observation.crop),
+                subtitle: Text('${observation.syncStatus.name} · ${observation.capturedAt.toLocal()}'),
+                trailing: const Icon(Icons.chevron_right),
+              );
+            },
+          );
+        },
       ),
     );
   }

@@ -4,9 +4,9 @@
 .packages
 build/
 coverage/
-pubspec.lock
 __pycache__/
 *.py[cod]
 .venv/
 *.db
+*.egg-info/
 .env

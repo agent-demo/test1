@@ -22,7 +22,20 @@ class ObservationCreate(BaseModel):
 
 class ObservationResponse(ObservationCreate):
     received_at: datetime
-    status: Literal["received", "needs_review"]
+    status: Literal["received", "needs_review", "verified"]
+
+
+class ReviewCreate(BaseModel):
+    verified_label: str = Field(min_length=1, max_length=160)
+    reviewer_confidence: float = Field(ge=0, le=1)
+    reviewer_notes: str = Field(min_length=1, max_length=4000)
+    follow_up_result: str | None = Field(default=None, max_length=2000)
+
+
+class ReviewResponse(ReviewCreate):
+    observation_id: str
+    reviewed_at: datetime
+    training_candidate: bool
 
 
 class PriceSnapshot(BaseModel):
@@ -32,8 +45,15 @@ class PriceSnapshot(BaseModel):
     minimum: float | None = Field(default=None, ge=0)
     maximum: float | None = Field(default=None, ge=0)
     modal: float | None = Field(default=None, ge=0)
+    unit: Literal["quintal", "kg"] = "quintal"
     observed_on: datetime
     source: str = "agmarknet"
+
+
+class PriceQuery(BaseModel):
+    commodity: str = Field(min_length=1)
+    market: str = Field(min_length=1)
+    variety: str | None = None
 
 
 class AdvisoryRequest(BaseModel):
