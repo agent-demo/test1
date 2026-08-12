@@ -1,6 +1,6 @@
 {
   "model_id": "LishaV01/agriculture-crop-disease-detection",
-  "revision": "main",
+  "revision": "24abe2d06442f62d8168041ec539832cd39d397e",
   "architecture": "ViTForImageClassification",
   "input": {
     "width": 224,

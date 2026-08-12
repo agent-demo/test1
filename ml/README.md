@@ -11,7 +11,7 @@ python ml/scripts/inspect_hf_model.py
 python ml/scripts/export_onnx.py
 ```
 
-The scripts require the packages in [requirements.txt](requirements.txt). The model binary is deliberately ignored by Git. Pin a Hugging Face commit revision for a release instead of using `main`.
+The scripts require the packages in [requirements.txt](requirements.txt). The model binary is deliberately ignored by Git. The checked-in manifest pins the current Hugging Face commit; use that revision for releases rather than `main`.
 
 The current `shell.nix` provides Python 3.12 and CUDA libraries, but it does not itself declare PyTorch/Transformers. Install [requirements.txt](requirements.txt) into a Python 3.12 virtual environment inside that shell, or add equivalent pinned Nix packages for a fully hermetic build.
 
@@ -28,4 +28,4 @@ Required work before bundling it:
 7. Measure CPU latency and memory on a low-cost Android phone.
 8. Add a field-image evaluation set and calibrate abstention thresholds.
 
-Until this work is complete, the Flutter app deliberately reports mock inference and does not claim a real diagnosis.
+The Flutter app now bundles the parity-checked ONNX export for offline screening. It still must be treated as a research/hackathon aid: the manifest explicitly records that the model is not field-validated, and the app abstains on low-confidence or unsupported inputs rather than claiming a diagnosis.
