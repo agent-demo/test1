@@ -1,0 +1,12 @@
+# CPU-only export environment for Python 3.12. Use this instead of
+# requirements.txt when CUDA is not needed for conversion/evaluation.
+--index-url https://download.pytorch.org/whl/cpu
+torch>=2.4,<3
+--extra-index-url https://pypi.org/simple
+transformers>=4.45,<5
+safetensors>=0.4,<1
+onnx>=1.16,<2
+onnxruntime>=1.18,<2
+onnxscript>=0.2,<1
+Pillow>=10,<12
+numpy>=1.26,<3

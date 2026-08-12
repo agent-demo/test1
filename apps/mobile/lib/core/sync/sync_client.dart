@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/observation.dart';
@@ -20,6 +22,11 @@ class SyncClient {
     for (final observation in pending) {
       await store.markSyncStatus(observation.id, SyncStatus.syncing);
       try {
+        final imageHash = observation.imagePath == null
+            ? null
+            : sha256
+                .convert(await File(observation.imagePath!).readAsBytes())
+                .toString();
         final response = await _client.post(
           Uri.parse('$baseUrl/api/v1/observations'),
           headers: {'content-type': 'application/json'},
@@ -37,10 +44,24 @@ class SyncClient {
             'recent_spray': observation.recentSpray,
             'approximate_location': observation.approximateLocation,
             'consent_for_training': observation.consentForTraining,
+            'image_sha256': imageHash,
           }),
         );
         if (response.statusCode < 200 || response.statusCode >= 300) {
           throw StateError('Sync failed with HTTP ${response.statusCode}');
+        }
+        if (observation.imagePath != null) {
+          final imageRequest = http.MultipartRequest(
+            'POST',
+            Uri.parse('$baseUrl/api/v1/observations/${observation.id}/image'),
+          )..files.add(await http.MultipartFile.fromPath(
+              'image', observation.imagePath!));
+          final imageResponse = await imageRequest.send();
+          if (imageResponse.statusCode < 200 ||
+              imageResponse.statusCode >= 300) {
+            throw StateError(
+                'Image sync failed with HTTP ${imageResponse.statusCode}');
+          }
         }
         await store.markSyncStatus(observation.id, SyncStatus.synced);
         synced++;

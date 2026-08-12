@@ -1,0 +1,13 @@
+services:
+  api:
+    build: ./services/api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./services/api/.env
+    volumes:
+      - crop_saathi_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  crop_saathi_data:

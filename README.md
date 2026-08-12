@@ -4,6 +4,8 @@ Offline-first crop health screening and economic advisory prototype for Indian s
 
 The product requirements are documented in [PROJECT_SPEC.md](PROJECT_SPEC.md). The repository is intentionally split into a Flutter client, a FastAPI service, and an ML conversion/training area.
 
+Security assumptions and prototype gaps are documented in [SECURITY.md](SECURITY.md).
+
 ## Repository layout
 
 ```text

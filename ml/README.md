@@ -15,6 +15,8 @@ The scripts require the packages in [requirements.txt](requirements.txt). The mo
 
 The current `shell.nix` provides Python 3.12 and CUDA libraries, but it does not itself declare PyTorch/Transformers. Install [requirements.txt](requirements.txt) into a Python 3.12 virtual environment inside that shell, or add equivalent pinned Nix packages for a fully hermetic build.
 
+For CPU-only model export, prefer [requirements-cpu.txt](requirements-cpu.txt). The unconstrained PyPI Torch resolver may select a CUDA wheel; that is unnecessary for ONNX conversion and can consume hundreds of megabytes.
+
 Required work before bundling it:
 
 1. Download the model and inspect whether the Safetensors file is a full classifier or an adapter requiring a base model.

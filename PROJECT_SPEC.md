@@ -157,6 +157,8 @@ Before release, test:
 
 The model card does not establish field accuracy, calibration, or agronomic safety. Those limitations must be visible in the prototype.
 
+The upstream model config currently has 20 output classes, including `Invalid`, and separate near-duplicate rice labels. The application label contract is recorded in `ml/model_manifest.json`; it must not silently merge these classes.
+
 ## Economic advisory
 
 Use Agmarknet-derived price snapshots for commodity, variety, market, date, minimum, maximum, and modal price where available. Treat the value as wholesale market information, not guaranteed farm-gate revenue.

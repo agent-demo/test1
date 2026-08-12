@@ -12,4 +12,5 @@ __pycache__/
 *.egg-info/
 ml/artifacts/*
 !ml/artifacts/.gitkeep
+apps/mobile/assets/models/*.onnx
 .env

@@ -20,6 +20,16 @@ def main() -> None:
 
     processor = AutoImageProcessor.from_pretrained(args.model_dir, local_files_only=True)
     model = AutoModelForImageClassification.from_pretrained(args.model_dir, local_files_only=True).eval()
+
+    class LogitsOnly(torch.nn.Module):
+        def __init__(self, wrapped):
+            super().__init__()
+            self.wrapped = wrapped
+
+        def forward(self, pixel_values):
+            return self.wrapped(pixel_values=pixel_values).logits
+
+    model = LogitsOnly(model).eval()
     sample = torch.zeros(1, 3, 224, 224, dtype=torch.float32)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     torch.onnx.export(
@@ -31,6 +41,12 @@ def main() -> None:
         dynamic_axes={"pixel_values": {0: "batch"}, "logits": {0: "batch"}},
         opset_version=args.opset,
     )
+    # Torch may emit a tiny graph plus an external-data sidecar. Android asset
+    # loading is simpler and safer with one immutable model file.
+    import onnx
+
+    exported = onnx.load(args.output, load_external_data=True)
+    onnx.save_model(exported, args.output, save_as_external_data=False)
     print(f"exported {args.output}")
     print(f"preprocessing: size={processor.size}, mean={processor.image_mean}, std={processor.image_std}")
     print("export is not deployment approval; run parity and field calibration before bundling")

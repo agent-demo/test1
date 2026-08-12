@@ -1,7 +1,9 @@
 import os
+import hashlib
 from datetime import UTC, datetime
+from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 
 from .agmarknet import AgmarknetClient
 from .schemas import (
@@ -30,6 +32,8 @@ async def reviewer_required(x_reviewer_token: str | None = Header(default=None))
 def create_app(store: SQLiteStore | None = None) -> FastAPI:
     api = FastAPI(title="Crop Saathi API", version="0.2.0")
     api.state.store = store or SQLiteStore(os.getenv("CROP_SAATHI_DB", "data/crop_saathi.db"))
+    api.state.image_dir = Path(os.getenv("CROP_SAATHI_IMAGE_DIR", "data/images"))
+    api.state.image_dir.mkdir(parents=True, exist_ok=True)
 
     @api.get("/health")
     async def health() -> dict[str, str]:
@@ -53,6 +57,28 @@ def create_app(store: SQLiteStore | None = None) -> FastAPI:
         if not observation:
             raise HTTPException(status_code=404, detail="Observation not found")
         return observation
+
+    @api.post("/api/v1/observations/{observation_id}/image")
+    async def upload_observation_image(
+        observation_id: str,
+        image: UploadFile = File(...),
+    ) -> dict[str, str | int]:
+        observation = api.state.store.get_observation(observation_id)
+        if not observation:
+            raise HTTPException(status_code=404, detail="Observation not found")
+        allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        if image.content_type not in allowed_types:
+            raise HTTPException(status_code=415, detail="Only JPEG, PNG, or WebP images are accepted")
+        maximum_bytes = 8 * 1024 * 1024
+        content = await image.read(maximum_bytes + 1)
+        if len(content) > maximum_bytes:
+            raise HTTPException(status_code=413, detail="Image exceeds the 8 MB limit")
+        digest = hashlib.sha256(content).hexdigest()
+        if observation.image_sha256 and observation.image_sha256 != digest:
+            raise HTTPException(status_code=422, detail="Image checksum does not match observation metadata")
+        target = api.state.image_dir / f"{observation_id}-{digest}.{image.filename.rsplit('.', 1)[-1].lower() if image.filename and '.' in image.filename else 'bin'}"
+        target.write_bytes(content)
+        return {"observation_id": observation_id, "sha256": digest, "bytes": len(content)}
 
     @api.post("/api/v1/observations/{observation_id}/review", response_model=ReviewResponse)
     async def review_observation(

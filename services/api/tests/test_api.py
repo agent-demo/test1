@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+import hashlib
 
 from app.agmarknet import AgmarknetClient
 from app.main import create_app
@@ -12,11 +13,19 @@ class ASGIClient:
     def __init__(self, app):
         self.app = app
 
-    def request(self, method: str, path: str, body: dict | None = None, headers: dict[str, str] | None = None):
+    def request(
+        self,
+        method: str,
+        path: str,
+        body: dict | None = None,
+        headers: dict[str, str] | None = None,
+        raw_body: bytes | None = None,
+        raw_headers: dict[str, str] | None = None,
+    ):
         import asyncio
         import json
 
-        request_body = json.dumps(body).encode() if body is not None else b""
+        request_body = raw_body if raw_body is not None else (json.dumps(body).encode() if body is not None else b"")
         response = {"status": None, "headers": [], "body": bytearray()}
         sent = False
 
@@ -42,7 +51,7 @@ class ASGIClient:
             "path": path,
             "raw_path": path.encode(),
             "query_string": b"",
-            "headers": [(key.lower().encode(), value.encode()) for key, value in (headers or {}).items()],
+            "headers": [(key.lower().encode(), value.encode()) for key, value in {**(headers or {}), **(raw_headers or {})}.items()],
             "scheme": "http",
             "server": ("testserver", 80),
             "client": ("testclient", 123),
@@ -57,6 +66,20 @@ class ASGIClient:
 
     def post(self, path: str, body: dict, headers: dict[str, str] | None = None):
         return self.request("POST", path, body, headers)
+
+    def multipart(self, path: str, field: str, filename: str, content_type: str, content: bytes):
+        boundary = "crop-saathi-test-boundary"
+        body = (
+            f"--{boundary}\r\n"
+            f"Content-Disposition: form-data; name=\"{field}\"; filename=\"{filename}\"\r\n"
+            f"Content-Type: {content_type}\r\n\r\n"
+        ).encode() + content + f"\r\n--{boundary}--\r\n".encode()
+        return self.request(
+            "POST",
+            path,
+            raw_body=body,
+            raw_headers={"content-type": f"multipart/form-data; boundary={boundary}"},
+        )
 
 
 class ASGIResponse:
@@ -181,3 +204,35 @@ def test_agmarknet_record_parser_handles_common_field_names() -> None:
     )
     assert parsed.modal == 2800
     assert parsed.source == "agmarknet/data.gov.in"
+
+
+def test_image_upload_validates_type_size_and_checksum(tmp_path, monkeypatch) -> None:
+    client = make_client(tmp_path, monkeypatch)
+    content = b"not-really-a-jpeg-but-the-upload-boundary-is-tested"
+    digest = hashlib.sha256(content).hexdigest()
+    payload = {
+        "observation_id": "obs-image-001",
+        "crop": "rice",
+        "captured_at": datetime.now(UTC).isoformat(),
+        "model_version": "mock-0.1",
+        "predictions": [],
+        "image_sha256": digest,
+        "consent_for_training": True,
+    }
+    assert client.post("/api/v1/observations", payload).status_code == 200
+    assert client.multipart(
+        "/api/v1/observations/obs-image-001/image",
+        "image",
+        "leaf.jpg",
+        "image/jpeg",
+        content,
+    ).status_code == 200
+    invalid = payload | {"image_sha256": "bad"}
+    assert client.post("/api/v1/observations", invalid).status_code == 422
+    assert client.multipart(
+        "/api/v1/observations/obs-image-001/image",
+        "image",
+        "leaf.txt",
+        "text/plain",
+        content,
+    ).status_code == 415

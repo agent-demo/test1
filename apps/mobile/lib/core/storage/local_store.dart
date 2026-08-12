@@ -12,7 +12,7 @@ class LocalStore {
     final databasePath = path.join(await getDatabasesPath(), 'crop_saathi.db');
     final database = await openDatabase(
       databasePath,
-      version: 2,
+      version: 3,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE observations (
@@ -22,6 +22,7 @@ class LocalStore {
             model_version TEXT NOT NULL,
             predictions TEXT NOT NULL,
             abstained INTEGER NOT NULL,
+            image_path TEXT,
             abstain_reason TEXT,
             growth_stage TEXT,
             symptoms TEXT NOT NULL DEFAULT '[]',
@@ -42,6 +43,10 @@ class LocalStore {
               'ALTER TABLE observations ADD COLUMN recent_spray INTEGER');
           await db.execute(
               'ALTER TABLE observations ADD COLUMN approximate_location TEXT');
+        }
+        if (oldVersion < 3) {
+          await db
+              .execute('ALTER TABLE observations ADD COLUMN image_path TEXT');
         }
       },
     );

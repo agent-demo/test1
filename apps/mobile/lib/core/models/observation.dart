@@ -24,6 +24,7 @@ class Observation {
     required this.modelVersion,
     required this.predictions,
     required this.abstained,
+    this.imagePath,
     this.abstainReason,
     this.growthStage,
     this.symptoms = const [],
@@ -39,6 +40,7 @@ class Observation {
   final String modelVersion;
   final List<Prediction> predictions;
   final bool abstained;
+  final String? imagePath;
   final String? abstainReason;
   final String? growthStage;
   final List<String> symptoms;
@@ -54,6 +56,7 @@ class Observation {
         modelVersion: modelVersion,
         predictions: predictions,
         abstained: abstained,
+        imagePath: imagePath,
         abstainReason: abstainReason,
         growthStage: growthStage,
         symptoms: symptoms,
@@ -71,6 +74,7 @@ class Observation {
         'predictions':
             jsonEncode(predictions.map((item) => item.toJson()).toList()),
         'abstained': abstained ? 1 : 0,
+        'image_path': imagePath,
         'abstain_reason': abstainReason,
         'growth_stage': growthStage,
         'symptoms': jsonEncode(symptoms),
@@ -90,6 +94,7 @@ class Observation {
                 Prediction.fromJson(Map<String, dynamic>.from(item as Map)))
             .toList(),
         abstained: row['abstained'] == 1,
+        imagePath: row['image_path'] as String?,
         abstainReason: row['abstain_reason'] as String?,
         growthStage: row['growth_stage'] as String?,
         symptoms: (jsonDecode(row['symptoms'] as String? ?? '[]') as List)

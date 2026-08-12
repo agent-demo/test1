@@ -17,7 +17,12 @@ class ObservationCreate(BaseModel):
     predictions: list[Prediction]
     abstained: bool = False
     abstain_reason: str | None = None
+    growth_stage: str | None = Field(default=None, max_length=80)
+    symptoms: list[str] = Field(default_factory=list, max_length=20)
+    recent_spray: bool | None = None
+    approximate_location: str | None = Field(default=None, max_length=120)
     consent_for_training: bool = False
+    image_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
 class ObservationResponse(ObservationCreate):

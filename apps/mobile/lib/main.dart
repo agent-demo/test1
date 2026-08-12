@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'core/inference/mock_inference_service.dart';
 import 'core/i18n/app_localizations.dart';
+import 'core/inference/onnx_inference_service.dart';
 import 'core/media/photo_quality.dart';
 import 'core/models/observation.dart';
 import 'core/storage/local_store.dart';
@@ -328,16 +328,18 @@ class ResultPage extends StatelessWidget {
   }
 
   Future<void> _saveObservation(BuildContext context) async {
-    final result =
-        await MockInferenceService().classify(crop: crop, imagePath: imagePath);
+    final inference = OnnxInferenceService();
+    final result = await inference.classify(crop: crop, imagePath: imagePath);
+    inference.release();
     await store.saveObservation(
       Observation(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
         crop: crop.toLowerCase(),
         capturedAt: DateTime.now(),
-        modelVersion: 'mock-0.1',
+        modelVersion: 'onnx-vit-tiny-v0',
         predictions: result.predictions,
         abstained: result.abstained,
+        imagePath: imagePath,
         abstainReason: result.reason,
         symptoms: symptoms,
         recentSpray: recentSpray,

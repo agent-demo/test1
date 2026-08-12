@@ -4,5 +4,6 @@ transformers>=4.45,<5
 safetensors>=0.4,<1
 onnx>=1.16,<2
 onnxruntime>=1.18,<2
+onnxscript>=0.2,<1
 Pillow>=10,<12
 numpy>=1.26,<3
