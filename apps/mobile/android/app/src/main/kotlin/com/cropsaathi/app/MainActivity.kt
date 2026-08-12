@@ -1,4 +1,4 @@
-package in.cropsaathi.app
+package com.cropsaathi.app
 
 import io.flutter.embedding.android.FlutterActivity
 
